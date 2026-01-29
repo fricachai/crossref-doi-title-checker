@@ -5,7 +5,6 @@ from time import sleep
 # 1) set_page_config 必須放最上面（第一個 Streamlit 指令）
 st.set_page_config(page_title="Crossref DOI Title Checker", layout="centered")
 
-import streamlit as st
 import streamlit_authenticator as stauth
 import inspect
 
@@ -66,12 +65,14 @@ if authentication_status is True:
         except TypeError:
             authenticator.logout("登出")
         st.caption(f"登入者：{name} ({username})")
+
 elif authentication_status is False:
     st.error("帳號或密碼錯誤")
     st.stop()
+
 else:
     st.warning("請先登入")
-    st.
+    st.stop()
 
 
 # （可選）版本顯示
@@ -121,4 +122,5 @@ if st.button("Check DOIs"):
 
         st.success(f"Checked {len(results)} DOIs")
         st.dataframe(results, use_container_width=True)
+
 
