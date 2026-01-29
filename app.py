@@ -1,4 +1,6 @@
 import streamlit as st
+st.write("streamlit version:", st.__version__)
+
 import requests
 import re
 from time import sleep
@@ -55,3 +57,4 @@ if st.button("Check DOIs"):
                     })
         st.success(f"Checked {len(results)} DOIs")
         st.dataframe(results, use_container_width=True)
+
