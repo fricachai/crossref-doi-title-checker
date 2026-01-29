@@ -5,6 +5,75 @@ from time import sleep
 # 1) set_page_config 必須放最上面（第一個 Streamlit 指令）
 st.set_page_config(page_title="Crossref DOI Title Checker", layout="centered")
 
+import streamlit as st
+import streamlit_authenticator as stauth
+import inspect
+
+def secrets_to_dict(x):
+    if hasattr(x, "to_dict"):
+        return secrets_to_dict(x.to_dict())
+    if isinstance(x, dict):
+        return {k: secrets_to_dict(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [secrets_to_dict(v) for v in x]
+    return x
+
+# ===== 1) 先把 secrets 轉成一般 dict =====
+auth_config = secrets_to_dict(st.secrets["auth"])
+
+# ===== 2) 先建立 authenticator（這行一定要在 safe_login 前面）=====
+authenticator = stauth.Authenticate(
+    auth_config["credentials"],
+    auth_config["cookie_name"],
+    auth_config["cookie_key"],
+    auth_config["cookie_expiry_days"],
+)
+
+# ===== 3) 再登入（只呼叫一次，避免 duplicate form）=====
+def safe_login(authenticator):
+    fn = authenticator.login
+
+    # 只允許「成功命中其中一種呼叫方式」就立刻回傳
+    # 注意：要同時 catch TypeError / ValueError，因為你前面也遇過 ValueError(location 限制)
+    for call in [
+        lambda: fn("登入系統", "main"),          # 常見： (form_name, location)
+        lambda: fn("main", "登入系統"),          # 你雲端看起來像： (location, form_name)
+        lambda: fn("登入系統"),                  # 少數：只吃 form_name
+        lambda: fn(),                            # 少數：不吃參數
+        lambda: fn(location="main"),             # 有些版才吃 keyword
+        lambda: fn("登入系統", location="main"), # 有些新版才吃 keyword
+    ]:
+        try:
+            return call()
+        except (TypeError, ValueError):
+            continue
+
+    # 如果所有模式都不支援，直接拋錯（讓你看到真錯誤）
+    raise RuntimeError("streamlit-authenticator.login() 介面不相容：所有呼叫模式都失敗")
+
+
+login_ret = safe_login(authenticator)
+
+# ===== 4) 讀取結果（以 session_state 為主）=====
+authentication_status = st.session_state.get("authentication_status", None)
+name = st.session_state.get("name", "")
+username = st.session_state.get("username", "")
+
+if authentication_status is True:
+    with st.sidebar:
+        try:
+            authenticator.logout("登出", "sidebar")
+        except TypeError:
+            authenticator.logout("登出")
+        st.caption(f"登入者：{name} ({username})")
+elif authentication_status is False:
+    st.error("帳號或密碼錯誤")
+    st.stop()
+else:
+    st.warning("請先登入")
+    st.
+
+
 # （可選）版本顯示
 st.write("streamlit version:", st.__version__)
 
@@ -52,3 +121,4 @@ if st.button("Check DOIs"):
 
         st.success(f"Checked {len(results)} DOIs")
         st.dataframe(results, use_container_width=True)
+
