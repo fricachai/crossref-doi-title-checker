@@ -122,5 +122,3 @@ if st.button("Check DOIs"):
 
         st.success(f"Checked {len(results)} DOIs")
         st.dataframe(results, use_container_width=True)
-
-
