@@ -1,12 +1,9 @@
+import streamlit as st
 import re
 import requests
 from time import sleep
 
-def normalize(s: str) -> str:
-    s = s.lower().strip()
-    s = re.sub(r"\s+", " ", s)
-    s = s.replace("’", "'").replace("–", "-").replace("—", "-")
-    return s
+st.title("Crossref DOI Title Checker")
 
 def crossref_lookup(doi: str):
     url = f"https://api.crossref.org/works/{doi}"
@@ -23,20 +20,21 @@ def crossref_lookup(doi: str):
             break
 
     return {
-        "doi": doi,
-        "title": title,
-        "journal": journal,
-        "year": year,
+        "DOI": doi,
+        "Title": title,
+        "Journal": journal,
+        "Year": year,
     }
 
-# 👇👇👇 就是這裡 👇👇👇
-if __name__ == "__main__":
-    dois = [
-        "10.1016/j.compedu.2010.01.007",
-        "10.1016/j.compedu.2010.02.007",
-    ]
+dois = [
+    "10.1016/j.compedu.2010.01.007",
+    "10.1016/j.compedu.2010.02.007",
+]
 
-    for doi in dois:
-        meta = crossref_lookup(doi)
-        print(meta)
-        sleep(0.2)
+results = []
+
+for doi in dois:
+    results.append(crossref_lookup(doi))
+    sleep(0.2)
+
+st.dataframe(results)
